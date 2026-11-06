@@ -1,0 +1,33 @@
+name: Rebase branch onto upstream main and push
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch in this fork to rebase and force-push
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  rebase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Rebase onto upstream main and squash to one commit
+        run: |
+          set -euo pipefail
+          BRANCH="${{ inputs.branch }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/golusoris/sveltesentio.git
+          git fetch upstream main
+          git fetch origin "$BRANCH"
+          git checkout "$BRANCH"
+          git rebase upstream/main
+          git reset --soft upstream/main
+          git commit -m "fix(query): type queryFn with TanStack's QueryFunctionContext" -m "Type SentioQueryOptions.queryFn as QueryFunction<TData, TKey> so resolvers receive the query context (signal, queryKey, meta); zero-argument resolvers stay assignable. Drop the identity assertion in favor of behavioral signal-forwarding checks and add a negative @ts-expect-error case rejecting incompatible queryFn types." -m "Fixes #488" --author="bfs2021 <101915083+bfs2021@users.noreply.github.com>"
+          git push --force-with-lease origin "$BRANCH"
